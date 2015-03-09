@@ -54,7 +54,7 @@ class RecordingsModel:
             self.file_saver = FileSaver(path)
 
     def get_recordings(self, model):
-        return self.session.query(Recording).filter(Recording.model == model).all()
+        return Recording.query.filter(Recording.model == model)
 
     def get_recording(self, id):
         return self.session.query(Recording).get(int(id))

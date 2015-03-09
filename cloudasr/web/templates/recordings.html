@@ -32,4 +32,20 @@
     </tbody>
 </table>
 
+<div class="text-center">
+    <div class="btn-group">
+        {%- for page in pagination.iter_pages() %}
+            {% if page %}
+                {% if page != pagination.page %}
+                    <a href="{{ url_for("recordings", model=model, page=page) }}" class="btn btn-default">{{ page }}</a>
+                {% else %}
+                    <span class="btn btn-success">{{ page }}</span>
+                {% endif %}
+            {% else %}
+                <span class="btn btn-default">…</span>
+            {% endif %}
+        {%- endfor %}
+    </div>
+</div>
+
 {% endblock %}
