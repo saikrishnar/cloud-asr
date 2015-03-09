@@ -1,23 +1,20 @@
 import json
 import wave
-from cloudasr.schema import create_db_session, WorkerType, User, Recording, Hypothesis, Transcription
-
-def create_db_connection(connection_string):
-    return create_db_session(connection_string)
+from cloudasr.schema import WorkerType, User, Recording, Hypothesis, Transcription
 
 
 class WorkerTypesModel:
 
-    def __init__(self, db):
-        self.db = db
+    def __init__(self, session):
+        self.session = session
 
     def get_models(self):
-        return self.db.query(WorkerType).all()
+        return self.session.query(WorkerType).all()
 
     def get_available_workers(self):
         workers = []
 
-        for worker in self.db.query(WorkerType).all():
+        for worker in self.session.query(WorkerType).all():
             workers.append({
                 'id': worker.id,
                 'name': worker.name,
@@ -27,15 +24,15 @@ class WorkerTypesModel:
         return workers
 
     def get_worker_type(self, id):
-        return self.db.query(WorkerType).get(id)
+        return self.session.query(WorkerType).get(id)
 
     def upsert_worker_type(self, id):
         worker_type = self.get_worker_type(id)
 
         if not worker_type:
             worker_type = WorkerType(id = id)
-            self.db.add(worker_type)
-            self.db.commit()
+            self.session.add(worker_type)
+            self.session.commit()
 
         return worker_type
 
@@ -44,12 +41,12 @@ class WorkerTypesModel:
         worker.name = name
         worker.description = description
 
-        self.db.commit()
+        self.session.commit()
 
 class RecordingsModel:
 
-    def __init__(self, db, worker_types_model, path = None, url = None):
-        self.db = db
+    def __init__(self, session, worker_types_model, path = None, url = None):
+        self.session = session
         self.worker_types_model = worker_types_model
         self.url = url
 
@@ -57,14 +54,14 @@ class RecordingsModel:
             self.file_saver = FileSaver(path)
 
     def get_recordings(self, model):
-        return self.db.query(Recording).filter(Recording.model == model).all()
+        return self.session.query(Recording).filter(Recording.model == model).all()
 
     def get_recording(self, id):
-        return self.db.query(Recording).get(int(id))
+        return self.session.query(Recording).get(int(id))
 
     def get_random_recording(self, model):
         from sqlalchemy import func
-        return self.db.query(Recording) \
+        return self.session.query(Recording) \
             .filter(Recording.model == model) \
             .order_by(Recording.rand_score) \
             .limit(1) \
@@ -94,8 +91,8 @@ class RecordingsModel:
                 confidence = alternative["confidence"]
             ))
 
-        self.db.add(recording)
-        self.db.commit()
+        self.session.add(recording)
+        self.session.commit()
 
     def add_transcription(self, user, id, transcription, native_speaker, offensive_language, not_a_speech):
         transcription = Transcription(
@@ -109,7 +106,7 @@ class RecordingsModel:
         recording = self.get_recording(id)
         recording.transcriptions.append(transcription)
         recording.update_score()
-        self.db.commit()
+        self.session.commit()
 
 
 class FileSaver:
@@ -133,11 +130,11 @@ class FileSaver:
 
 class UsersModel:
 
-    def __init__(self, db):
-        self.db = db
+    def __init__(self, session):
+        self.session = session
 
     def get_user(self, id):
-        return self.db.query(User).get(int(id))
+        return self.session.query(User).get(int(id))
 
     def upsert_user(self, userinfo):
         user = self.get_user(userinfo['id'])
@@ -154,8 +151,8 @@ class UsersModel:
                 avatar = userinfo['picture']
             )
 
-        self.db.add(user)
-        self.db.commit()
+        self.session.add(user)
+        self.session.commit()
 
         return user
 
